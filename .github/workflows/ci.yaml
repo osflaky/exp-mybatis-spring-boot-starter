@@ -1,0 +1,63 @@
+name: Java CI
+
+on:
+  workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - cache: maven
+          distribution: temurin
+          java: 21
+          os: macos-latest
+          arch: x64
+          runner: macos-15-intel
+        - cache: maven
+          distribution: temurin
+          java: 21
+          os: windows-latest
+          arch: arm64
+          runner: windows-11-arm
+        - cache: maven
+          distribution: temurin
+          java: 21
+          os: windows-latest
+          arch: x64
+          runner: windows-latest
+        - cache: maven
+          distribution: temurin
+          java: 25
+          os: windows-latest
+          arch: x64
+          runner: windows-latest
+        - cache: maven
+          distribution: temurin
+          java: 26
+          os: windows-latest
+          arch: x64
+          runner: windows-latest
+      max-parallel: 6
+    name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7
+    - name: Setup Java ${{ matrix.java }} ${{ matrix.distribution }}
+      uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6   # v6
+      with:
+        cache: ${{ matrix.cache }}
+        distribution: ${{ matrix.distribution }}
+        java-version: ${{ matrix.java }}
+    - name: Test with Maven
+      run: ./mvnw test --batch-mode --no-transfer-progress --show-version 
+        -D"license.skip=true"
